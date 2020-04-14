@@ -11,12 +11,13 @@ exports.logout = function(){
 exports.register = function(req, res){
     let user = new User(req.body);
     user.register();
+    console.log(user);
     if(user.errors.length) {
         res.send(user.errors);
     } else {
         res.send('Congrats there is no errors!');
     }
-    res.send('Thanks for trying to register');
+    
 }
 
 exports.home = function(req, res){
