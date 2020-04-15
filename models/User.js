@@ -29,6 +29,34 @@ User.prototype.validate = function(){
     if(this.data.username.length > 20) this.errors.push('The username cannot exceed 20 characters');
 }
 
+// User.prototype.login = function(callback) {
+//     this.cleanUp();
+//     usersCollection.findOne({username: this.data.username}, (err, attemptedUser)=>{
+//         if(attemptedUser && attemptedUser.password == this.data.password) {
+//             callback('There are no errors');
+//         } else {
+//             callback('Invalid username / password');
+//         }
+//     });
+// }
+
+User.prototype.login = function(callback) {
+    return new Promise((resolve, reject)=>{
+        this.cleanUp();
+        usersCollection.findOne({username: this.data.username})
+        .then((attemptedUser)=>{
+            if(attemptedUser && attemptedUser.password == this.data.password) {
+                resolve('There are no errors');
+            } else {
+                reject('Invalid username / password');
+            }
+        })
+        .catch((err)=>{
+            reject('Try again later!');
+        });
+    });
+}
+
 User.prototype.register = function() {
     this.cleanUp();
     // Step 1: Validate user data
