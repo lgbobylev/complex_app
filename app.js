@@ -22,6 +22,10 @@ app.use(express.json());
 app.use(sessionOptions);
 app.use(express.static('public'));
 app.use(flash());
+app.use(function(req, res, next){
+    res.locals.user = req.session.user;
+    next();
+});
 // configure express app to use ejs html template 
 app.set('views', 'views');
 app.set('view engine', 'ejs');

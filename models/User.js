@@ -29,22 +29,36 @@ User.prototype.validate = function () {
         if (this.data.password == '') this.errors.push('You must provide a password');
         if (this.data.password.length > 0 && this.data.password.length < 8) this.errors.push('The password must be 8 characters at least');
         if (this.data.password.length > 50) this.errors.push('The password cannot exceed 50 characters');
-        if (this.data.username.length > 0 && this.data.username.length < 3) this.errors.push('The username must be 3 characters at least');
+        if (this.data.username.length > 0 && this.data.username.length < 2) this.errors.push('The username must be 3 characters at least');
         if (this.data.username.length > 20) this.errors.push('The username cannot exceed 20 characters');
 
-        if (this.data.username.length > 3 && this.data.username.length < 21 && validator.isAlphanumeric(this.data.username)) {
-            let isUsernameExist = await usersCollection.findOne({username: this.data.username});
-            if (isUsernameExist) {
-                this.errors.push('That username is already taken');
-            }
+        if(!this.errors.length) {
+            console.log('Checking username');
+            await usersCollection.findOne({username: this.data.username}).then((result)=>{
+                if(result) {
+                    console.log('Username cheking result ', result);
+                    this.errors.push('That username is already taken');
+                }
+            }).catch((error)=>{
+                this.errors.push(error);
+            });
+            console.log('Checking email');
+            await usersCollection.findOne({email: this.data.email}).then((result)=>{
+                if(result) {
+                    console.log('Email checking result ', result);
+                    this.errors.push('That email address is already being used')
+                }
+            }).catch((error)=>{
+                this.errors.push(error)
+            });
         }
-        if (validator.isEmail(this.data.email)) {
-            let isEmailExist = await usersCollection.findOne({email: this.data.email});
-            if (isEmailExist) {
-                this.errors.push('That email address is already being used');
-            }
+        if(this.errors.length) {
+            console.log('From validation reject', this.errors);
+            reject(this.errors);
+        } else {
+            console.log('From validation resolve',this.errors);
+            resolve('Validation completed without errors');
         }
-        resolve();
     });
 }
 
@@ -69,20 +83,24 @@ User.prototype.register = function(){
     return new Promise(async (resolve, reject) => {
         this.cleanUp();
         // Step 1: Validate user data
-        await this.validate();
-        // Step 2: Only if there are no validation errors then
-        // save user data into a database
-        if(!this.errors.length){
-            // hash user's password
-            const salt = bcrypt.genSaltSync(10);
-            this.data.password = bcrypt.hashSync(this.data.password, salt); 
-            await usersCollection.insertOne(this.data);
-            this.getAvatar();
-            resolve();
-        } else {
-            reject(this.errors);
+        try {
+            await this.validate();
+            // Step 2: Only if there are no validation errors then
+            // save user data into a database
+            if(!this.errors.length){
+                // hash user's password
+                const salt = bcrypt.genSaltSync(10);
+                this.data.password = bcrypt.hashSync(this.data.password, salt); 
+                await usersCollection.insertOne(this.data);
+                this.getAvatar();
+                resolve('New user registered');
+            } else {
+                reject(this.errors);
+            }
+        } catch (error) {
+            reject(error);
         }
-    })
+    });
 }
 
 User.prototype.getAvatar = function() {
